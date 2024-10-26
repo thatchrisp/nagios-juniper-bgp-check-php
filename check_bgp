@@ -1,0 +1,73 @@
+#!/usr/local/bin/php
+<?php
+
+$null0 = array_shift($argv);
+$null1 = array_shift($argv);
+$host = array_shift($argv);
+$community = array_shift($argv);
+$remote_peer = array_shift($argv);
+$local_peer = array_shift($argv);
+
+$full_state = snmp2_get("{$host}", "{$community}", "1.3.6.1.2.1.15.3.1.2.{$remote_peer}", "3000000", "3");
+$state = explode(":", $full_state);
+$state = trim($state['1']);
+
+if ($state == "1") {
+
+	print "CRITICAL: BGP neighbor {$remote_peer} is down: idle(1)";
+	exit(2);
+
+} else if ($state == "2") {
+
+	print "CRITICAL: BGP neighbor {$remote_peer} is down: connect(2)";
+	exit(2);
+
+} else if ($state == "3") {
+
+	print "CRITICAL: BGP neighbor {$remote_peer} is down: active(3)";
+	exit(2);
+
+} else if ($state == "4") {
+
+	print "CRITICAL: BGP neighbor {$remote_peer} is down: opensent(4)";
+	exit(2);
+
+} else if ($state == "5") {
+
+	print "CRITICAL: BGP neighbor {$remote_peer} is down: openconfirm(5)";
+	exit(2);
+
+} else if ($state == "6") {
+
+	$index_oid = "1.3.6.1.4.1.2636.5.1.1.2.1.1.1.14.0.1.{$local_peer}.1.{$remote_peer}";
+	$index = snmp2_get("{$host}", "{$community}", "{$index_oid}", "3000000", "3");
+	$index = explode(":", $index);
+	$index = trim($index['1']);
+	
+	$routes_oid = "1.3.6.1.4.1.2636.5.1.1.2.6.2.1.8.{$index}.1.1";
+	$routes = snmp2_get("{$host}", "{$community}", "{$routes_oid}", "3000000", "3");
+	$routes = explode(":", $routes);
+	$routes = trim($routes['1']);
+	$routes = number_format($routes, 0, '', ',');
+
+	if ($routes == "1") {
+
+		$count = "route";
+
+	} else {
+
+		$count = "routes";
+
+	}
+
+	print "OK: BGP neighbor {$remote_peer} is up: {$routes} {$count} received";
+	exit(0);
+
+} else {
+
+	print "CRITICAL: {$full_state}\n";
+	exit(3);
+
+}
+
+?>
