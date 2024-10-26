@@ -1,4 +1,4 @@
-#!/usr/local/bin/php
+#!/path/to/php
 <?php
 
 $null0 = array_shift($argv);
